@@ -189,7 +189,7 @@ section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] {
 section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] > div {
     background-color: transparent !important;
 }
-section[data-testid="stSidebar"] [data-testid="stFileUploader"] button {
+section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] button {
     font-size: 0 !important;
     color: transparent !important;
     background-color: #ffffff !important;
@@ -201,17 +201,17 @@ section[data-testid="stSidebar"] [data-testid="stFileUploader"] button {
     padding: 0.5rem 1rem !important;
     transition: all 0.2s;
 }
-section[data-testid="stSidebar"] [data-testid="stFileUploader"] button * {
+section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] button * {
     display: none !important;
 }
-section[data-testid="stSidebar"] [data-testid="stFileUploader"] button::after {
+section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] button::after {
     content: "Chọn file";
     font-size: 14px !important;
     color: #1a237e !important;
     font-weight: 600 !important;
     display: block !important;
 }
-section[data-testid="stSidebar"] [data-testid="stFileUploader"] button:hover {
+section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] button:hover {
     background-color: #e8eaf6 !important;
     border-color: #3949ab !important;
 }
@@ -342,7 +342,7 @@ with st.sidebar:
 # ─────────────────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="hero">
-    <h1>🏛️ Phần mềm quản lý quỹ CBSV1</h1>
+    <h1>🏛️ Phần mềm đối soát đóng quỹ CBSV1</h1>
     <p>Đối soát sao kê ngân hàng với báo cáo đảng phí & Cập nhật trạng thái đóng đảng phí và quỹ chi bộ</p>
 </div>
 """, unsafe_allow_html=True)
