@@ -192,9 +192,17 @@ section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] > div {
 section[data-testid="stSidebar"] [data-testid="stFileUploader"] button {
     font-size: 0 !important;
     color: transparent !important;
+    background-color: #ffffff !important;
+    border: 1px solid #c5cae9 !important;
+    border-radius: 8px !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
+    padding: 0.5rem 1rem !important;
+    transition: all 0.2s;
+}
+section[data-testid="stSidebar"] [data-testid="stFileUploader"] button * {
+    display: none !important;
 }
 section[data-testid="stSidebar"] [data-testid="stFileUploader"] button::after {
     content: "Chọn file";
@@ -202,9 +210,12 @@ section[data-testid="stSidebar"] [data-testid="stFileUploader"] button::after {
     color: #1a237e !important;
     font-weight: 600 !important;
     display: block !important;
-    position: static !important;
-    transform: none !important;
 }
+section[data-testid="stSidebar"] [data-testid="stFileUploader"] button:hover {
+    background-color: #e8eaf6 !important;
+    border-color: #3949ab !important;
+}
+
 
 /* Translate Drag and drop text to Vietnamese */
 section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] > div > div > span {
