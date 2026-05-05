@@ -388,7 +388,7 @@ with st.sidebar:
 # ─────────────────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="hero">
-    <h1>🏛️ Phần mềm đối soát đóng quỹ CBSV1</h1>
+    <h1>🏛️ Ứng dụng đối soát đóng quỹ CBSV1</h1>
     <p>Đối soát sao kê ngân hàng với báo cáo đảng phí & Cập nhật trạng thái đóng đảng phí và quỹ chi bộ</p>
 </div>
 """, unsafe_allow_html=True)
