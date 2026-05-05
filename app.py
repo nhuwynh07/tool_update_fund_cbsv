@@ -175,71 +175,117 @@ section[data-testid="stSidebar"] > div {
 section[data-testid="stSidebar"] * { color: white !important; }
 section[data-testid="stSidebar"] .stFileUploader label { color: #c5cae9 !important; }
 
-/* Remove white background from file uploader in sidebar */
-section[data-testid="stSidebar"] [data-testid="stFileUploader"] section {
-    background-color: transparent !important;
-    border: 1px dashed rgba(255, 255, 255, 0.4) !important;
+# /* Remove white background from file uploader in sidebar */
+# section[data-testid="stSidebar"] [data-testid="stFileUploader"] section {
+#     background-color: transparent !important;
+#     border: 1px dashed rgba(255, 255, 255, 0.4) !important;
+# }
+# section[data-testid="stSidebar"] [data-testid="stFileUploader"] section > div {
+#     background-color: transparent !important;
+# }
+# section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] {
+#     background-color: transparent !important;
+# }
+# section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] > div {
+#     background-color: transparent !important;
+# }
+# section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] button {
+#     font-size: 0 !important;
+#     color: transparent !important;
+#     background-color: #ffffff !important;
+#     border: 1px solid #c5cae9 !important;
+#     border-radius: 8px !important;
+#     display: inline-flex !important;
+#     align-items: center !important;
+#     justify-content: center !important;
+#     padding: 0.5rem 1rem !important;
+#     transition: all 0.2s;
+# }
+# section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] button * {
+#     display: none !important;
+# }
+# section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] button::after {
+#     content: "Chọn file";
+#     font-size: 14px !important;
+#     color: #1a237e !important;
+#     font-weight: 600 !important;
+#     display: block !important;
+# }
+# section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] button:hover {
+#     background-color: #e8eaf6 !important;
+#     border-color: #3949ab !important;
+# }
+
+
+# /* Translate Drag and drop text to Vietnamese */
+# section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] > div > div > span {
+#     display: none;
+# }
+# section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] > div > div::before {
+#     content: "Kéo và thả file vào đây";
+#     color: white;
+#     font-size: 14px;
+#     display: block;
+#     margin-bottom: 2px;
+# }
+# section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] > div > div > small {
+#     display: none;
+# }
+# section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] > div > div::after {
+#     content: "Giới hạn 200MB/file • XLSX, XLS";
+#     color: #c5cae9;
+#     font-size: 12px;
+#     display: block;
+# }
+
+/* Tối ưu lại phần File Uploader trong Sidebar */
+section[data-testid="stSidebar"] [data-testid="stFileUploader"] {
+    width: 100%;
 }
-section[data-testid="stSidebar"] [data-testid="stFileUploader"] section > div {
-    background-color: transparent !important;
-}
+
 section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] {
-    background-color: transparent !important;
-}
-section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] > div {
-    background-color: transparent !important;
-}
-section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] button {
-    font-size: 0 !important;
-    color: transparent !important;
-    background-color: #ffffff !important;
-    border: 1px solid #c5cae9 !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    border: 1px dashed rgba(255, 255, 255, 0.3) !important;
     border-radius: 8px !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 0.5rem 1rem !important;
-    transition: all 0.2s;
+    padding: 15px !important;
 }
-section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] button * {
+
+/* Ẩn hoàn toàn các thành phần mặc định gây đè chữ */
+section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] button {
     display: none !important;
 }
-section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] button::after {
-    content: "Chọn file";
-    font-size: 14px !important;
-    color: #1a237e !important;
-    font-weight: 600 !important;
-    display: block !important;
-}
-section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] button:hover {
-    background-color: #e8eaf6 !important;
-    border-color: #3949ab !important;
-}
 
-
-/* Translate Drag and drop text to Vietnamese */
+/* Ẩn text mặc định "Drag and drop file here" */
 section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] > div > div > span {
-    display: none;
+    display: none !important;
 }
-section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] > div > div::before {
-    content: "Kéo và thả file vào đây";
-    color: white;
+
+/* Tạo giao diện nút bấm mới sạch sẽ */
+section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"]::before {
+    content: "Chọn file từ máy";
+    display: block;
+    background-color: white;
+    color: #1a237e;
+    text-align: center;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-weight: 600;
     font-size: 14px;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+/* Cấu trúc lại phần text hướng dẫn bên dưới nút */
+section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"]::after {
+    content: "Kéo thả hoặc nhấn để chọn (Tối đa 200MB)";
     display: block;
-    margin-bottom: 2px;
-}
-section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] > div > div > small {
-    display: none;
-}
-section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] > div > div::after {
-    content: "Giới hạn 200MB/file • XLSX, XLS";
     color: #c5cae9;
-    font-size: 12px;
-    display: block;
+    font-size: 11px;
+    text-align: center;
 }
 </style>
 """, unsafe_allow_html=True)
-
+    
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Helper: đọc trạng thái đảng viên từ workbook đã xử lý
@@ -492,7 +538,7 @@ if "result" in st.session_state:
         styled_ms = (
             ms_show.reset_index(drop=True)
             .style
-            .applymap(color_status, subset=[status_col])
+            .map(color_status, subset=[status_col])
         )
         st.dataframe(styled_ms, use_container_width=True, height=460)
 
