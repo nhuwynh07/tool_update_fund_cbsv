@@ -455,7 +455,7 @@ if "result" in st.session_state:
         styled = (
             df_show.reset_index(drop=True)
             .style
-            .applymap(color_log_type, subset=["Loại"])
+            .map(color_log_type, subset=["Loại"])
             .format({"Số tiền": "{:,.0f}", "Điểm": lambda x: f"{x:.1f}" if x != "" else ""})
         )
         st.dataframe(styled, use_container_width=True, height=420)
