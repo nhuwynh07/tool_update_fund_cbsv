@@ -27,8 +27,7 @@ from main import run_core
 # Cấu hình trang
 # ─────────────────────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="Đối Soát Thu Chi Bộ",
-    page_icon="🏛️",
+    page_title="Đối Soát Thu Chi Quỹ Chi Bộ",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -349,9 +348,9 @@ def color_log_type(val: str) -> str:
 # Sidebar – Upload files
 # ─────────────────────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("## 🏛️ Quản lý quỹ CBSV1")
+    st.markdown("## Quản lý quỹ CBSV1")
     st.markdown("---")
-    st.markdown("### 📂 Tải lên file dữ liệu")
+    st.markdown("### Tải lên file dữ liệu")
 
     st.markdown("**File sao kê ngân hàng**")
     sao_ke_file = st.file_uploader(
@@ -388,7 +387,7 @@ with st.sidebar:
 # ─────────────────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="hero">
-    <h1>🏛️ Ứng dụng đối soát đóng quỹ CBSV1</h1>
+    <h1> Ứng dụng đối soát đóng quỹ CBSV1</h1>
     <p>Đối soát sao kê ngân hàng với báo cáo đảng phí & Cập nhật trạng thái đóng đảng phí và quỹ chi bộ</p>
 </div>
 """, unsafe_allow_html=True)
@@ -396,12 +395,12 @@ st.markdown("""
 # Nút chạy
 both_uploaded = sao_ke_file is not None and tong_hop_file is not None
 if not both_uploaded:
-    st.info("⬅️ Vui lòng tải lên đủ hai file ở thanh bên trái để bắt đầu.")
+    st.info("⬅ Vui lòng tải lên đủ hai file ở thanh bên trái để bắt đầu.")
 
 col_run, col_space = st.columns([1, 2])
 with col_run:
     run_clicked = st.button(
-        "⚡ Chạy đối soát",
+        " Chạy đối soát",
         disabled=not both_uploaded,
         use_container_width=True,
     )
@@ -420,9 +419,9 @@ if run_clicked and both_uploaded:
             st.session_state["member_status"] = build_member_status(
                 result["workbook"], result["members_quy"]
             )
-            st.success("✅ Đối soát hoàn tất!")
+            st.success(" Đối soát hoàn tất!")
         except Exception as e:
-            st.error(f"❌ Lỗi khi xử lý: {e}")
+            st.error(f" Lỗi khi xử lý: {e}")
             st.exception(e)
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -469,9 +468,9 @@ if "result" in st.session_state:
 
     # ── Tabs nội dung ───────────────────────────────────────────────────────
     tab1, tab2, tab3 = st.tabs([
-        "📋 Log giao dịch",
-        "👥 Trạng thái đảng viên",
-        "📥 Tải xuống",
+        " Log giao dịch",
+        " Trạng thái đảng viên",
+        " Tải xuống",
     ])
 
     # ── Tab 1: Log giao dịch ────────────────────────────────────────────────
@@ -480,7 +479,7 @@ if "result" in st.session_state:
 
         c1, c2, c3 = st.columns([3, 2, 2])
         with c1:
-            search_name = st.text_input("🔍 Tìm theo tên", placeholder="Nhập họ tên...")
+            search_name = st.text_input(" Tìm theo tên", placeholder="Nhập họ tên...")
         with c2:
             filter_type = st.selectbox("Lọc loại", ["Tất cả", "quy", "phat", "ignore", "unknown"])
         with c3:
@@ -515,7 +514,7 @@ if "result" in st.session_state:
 
         c1, c2 = st.columns([3, 2])
         with c1:
-            search_member = st.text_input("🔍 Tìm đảng viên", placeholder="Nhập họ tên...", key="s2")
+            search_member = st.text_input(" Tìm đảng viên", placeholder="Nhập họ tên...", key="s2")
         with c2:
             filter_status = st.selectbox(
                 "Lọc trạng thái",
@@ -556,7 +555,7 @@ if "result" in st.session_state:
         col_dl, col_info = st.columns([1, 2])
         with col_dl:
             st.download_button(
-                label="📥 Tải file Excel đã cập nhật",
+                label=" Tải file Excel đã cập nhật",
                 data=result["excel_bytes"],
                 file_name=out_name,
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -567,15 +566,15 @@ if "result" in st.session_state:
             **File:** `{out_name}`
 
             File này bao gồm:
-            - ✅ Sheet **{SHEET_QUY}** – đã cập nhật trạng thái nộp quỹ
-            - ✅ Sheet **DoiSoat_Log** – nhật ký toàn bộ giao dịch đối soát
+            - Sheet **{SHEET_QUY}** – đã cập nhật trạng thái nộp quỹ
+            - Sheet **DoiSoat_Log** – nhật ký toàn bộ giao dịch đối soát
             """)
 
         st.markdown("---")
         st.markdown("**Tải xuống bảng log (CSV)**")
         csv_bytes = logs_df.to_csv(index=False, encoding="utf-8-sig").encode("utf-8-sig")
         st.download_button(
-            label="📄 Tải log CSV",
+            label=" Tải log CSV",
             data=csv_bytes,
             file_name="DoiSoat_Log.csv",
             mime="text/csv",
