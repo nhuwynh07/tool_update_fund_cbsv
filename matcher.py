@@ -9,14 +9,17 @@ except ImportError:
     fuzz = None
     from difflib import SequenceMatcher
 
+import config
 from text_utils import norm_text
 from config import (
     STOP_WORDS,
-    PHAT_RULES, QUY_KEYWORDS, QUY_AMOUNT_HINTS, PHAT_AMOUNT_HINTS,
+    QUY_KEYWORDS,
     ALLOW_PHAT_AMOUNT_HINT,
     MIN_MATCH_SCORE, AMBIGUOUS_SCORE_GAP,
     DEFAULT_COLLECTION_QUARTER, QUY_MONTH_COLS,
 )
+# Mức quỹ/phạt (QUY_AMOUNT_HINTS, PHAT_RULES, PHAT_AMOUNT_HINTS, ...) đọc qua
+# config.X lúc chạy vì có thể thay đổi trên giao diện.
 
 
 # ── Trích xuất cụm tên người từ nội dung giao dịch ──────────────────────────
@@ -122,22 +125,28 @@ def match_member(tx: dict, members: list) -> tuple:
 
 # ── Phân loại giao dịch ─────────────────────────────────────────────────────
 
+def phat_label(col: int) -> str:
+    """Tên loại vi phạm của cột phạt."""
+    return next((r["label"] for r in config.PHAT_RULES if r["col"] == col), f"cột {col}")
+
+
 def classify_transaction(tx: dict) -> tuple:
     """
     Phân loại giao dịch thành: 'ignore' | 'phat' | 'quy' | 'unknown'.
     Trả về (tx_type, target_col | None, ghi_chu).
 
-    Lưu ý: giao dịch 20.000đ không rõ tháng/quý → phạt KQHT (col 7),
-    tránh ghi sai vào tháng giao dịch thực tế (VD: nộp trễ tháng 4).
+    Lưu ý: giao dịch bằng mức quỹ 1 tháng nhưng không rõ tháng/quý → phạt
+    config.QUY_UNSPECIFIED_PHAT_COL (mặc định KQHT, col 7), tránh ghi sai vào
+    tháng giao dịch thực tế (VD: nộp trễ tháng 4).
     """
     details_norm = norm_text(tx["details"])
 
     # Lãi tài khoản → bỏ qua
-    if "tra lai so du" in details_norm or "lai so du" in details_norm:
+    if any(k in details_norm for k in ("tra lai so du", "lai so du", "sinh loi tu dong", "loi nhuan")):
         return "ignore", None, "Bỏ qua lãi tài khoản"
 
     # Khớp từ khóa phạt
-    for rule in PHAT_RULES:
+    for rule in config.PHAT_RULES:
         if any(norm_text(k) in details_norm for k in rule["keywords"]):
             return "phat", rule["col"], rule["label"]
 
@@ -146,18 +155,22 @@ def classify_transaction(tx: dict) -> tuple:
         return "quy", None, "Từ khóa quỹ/đảng phí"
 
     # Gợi ý theo số tiền
-    if tx["amount"] in QUY_AMOUNT_HINTS:
-        period = QUY_AMOUNT_HINTS[tx["amount"]]
-        if period == 1:
-            # 20k không rõ tháng/quý → phạt KQHT, không điền vào quỹ tránh sai tháng
+    if tx["amount"] in config.QUY_AMOUNT_HINTS:
+        period = config.QUY_AMOUNT_HINTS[tx["amount"]]
+        phat_col = config.QUY_UNSPECIFIED_PHAT_COL
+        if period == 1 and phat_col is not None:
+            # Mức 1 tháng không rõ tháng/quý → phạt, không điền vào quỹ tránh sai tháng
             has_month   = bool(re.search(r"\bthang\s*(1[0-2]|[1-9])\b", details_norm))
             has_quarter = bool(re.search(r"\b(q\s*[1-4]|quy\s*[1-4i]{1,3})\b", details_norm))
             if not has_month and not has_quarter:
-                return "phat", 7, "20k không rõ tháng/quý → phạt KQHT"
+                return "phat", phat_col, (
+                    f"{tx['amount']:,}đ không rõ tháng/quý → phạt {phat_label(phat_col)}"
+                )
         return "quy", None, "Suy luận quỹ theo số tiền"
 
-    if ALLOW_PHAT_AMOUNT_HINT and tx["amount"] in PHAT_AMOUNT_HINTS:
-        return "phat", PHAT_AMOUNT_HINTS[tx["amount"]], "Suy luận phạt nợ môn theo số tiền"
+    if ALLOW_PHAT_AMOUNT_HINT and tx["amount"] in config.PHAT_AMOUNT_HINTS:
+        col = config.PHAT_AMOUNT_HINTS[tx["amount"]]
+        return "phat", col, f"Suy luận phạt {phat_label(col)} theo số tiền"
 
     return "unknown", None, "Không nhận diện được loại thu"
 
@@ -194,12 +207,12 @@ def get_quy_months(tx: dict) -> list:
             return months_of_quarter(q)
 
     # Cả năm
-    if "ca nam" in t or tx["amount"] >= 240_000:
+    if "ca nam" in t or tx["amount"] >= config.QUY_STANDARD_MONTH_AMOUNT * 12:
         return list(range(1, 13))
 
     # Gợi ý theo số tiền (chỉ period 3 và 12; period 1 đã xử lý ở classify)
-    if tx["amount"] in QUY_AMOUNT_HINTS:
-        period = QUY_AMOUNT_HINTS[tx["amount"]]
+    if tx["amount"] in config.QUY_AMOUNT_HINTS:
+        period = config.QUY_AMOUNT_HINTS[tx["amount"]]
         if period == 12:
             return list(range(1, 13))
         if period == 3:

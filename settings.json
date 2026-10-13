@@ -1,0 +1,75 @@
+{
+  "quy_month_amount": 40000,
+  "quy_extra_amount_hints": [],
+  "phat_rules": [
+    {
+      "col": 5,
+      "label": "Viết BB họp không đầy đủ nội dung",
+      "amount": 30000,
+      "max_multiple": 3,
+      "keywords": [
+        "khong viet bb hop",
+        "khong viet bien ban",
+        "bb hop"
+      ]
+    },
+    {
+      "col": 6,
+      "label": "Không mang sổ họp",
+      "amount": 70000,
+      "max_multiple": 0,
+      "keywords": [
+        "khong mang so hop",
+        "quen so hop",
+        "so hop"
+      ]
+    },
+    {
+      "col": 7,
+      "label": "Không hoàn thành nhiệm vụ học tập",
+      "amount": 50000,
+      "max_multiple": 1,
+      "keywords": [
+        "khong hoan thanh nhiem vu hoc tap",
+        "kqht",
+        "kqht duoi kha",
+        "hoc tap"
+      ]
+    },
+    {
+      "col": 8,
+      "label": "Bị nợ môn",
+      "amount": 70000,
+      "max_multiple": 3,
+      "keywords": [
+        "no mon",
+        "rot mon",
+        "thi lai"
+      ]
+    },
+    {
+      "col": 9,
+      "label": "Vắng họp/ Báo vắng trễ",
+      "amount": 50000,
+      "max_multiple": 0,
+      "keywords": [
+        "vang hop",
+        "vang mat hop",
+        "khong bao truoc",
+        "bao vang tre"
+      ]
+    },
+    {
+      "col": 10,
+      "label": "Không đọc thông báo",
+      "amount": 30000,
+      "max_multiple": 0,
+      "keywords": [
+        "khong doc thong bao",
+        "khong thuc hien thong bao",
+        "thong bao chi bo"
+      ]
+    }
+  ],
+  "quy_unspecified_phat_col": null
+}

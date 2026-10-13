@@ -15,6 +15,8 @@ Hàm run_core() hỗ trợ cả đường dẫn file và BytesIO,
 dùng được từ CLI lẫn giao diện Streamlit.
 """
 import io
+import re
+from datetime import datetime
 
 import pandas as pd
 from openpyxl import load_workbook
@@ -25,12 +27,19 @@ from config import (
     QUY_MONTH_COLS,
 )
 from statement_reader import read_statement, read_members
-from matcher import classify_transaction, match_member, get_quy_months
+from matcher import classify_transaction, match_member, get_quy_months, months_of_quarter, phat_label
 from excel_writer import (
     read_logged_txn_ids, write_log_sheet,
     set_quy_month, refresh_quy_formulas,
     update_phat_cell, refresh_phat_formula,
 )
+
+
+def _logs_df(logs: list) -> pd.DataFrame:
+    """DataFrame log; cột Điểm để dạng số (ô trống = NaN) cho hiển thị/Arrow."""
+    df = pd.DataFrame(logs)
+    df["Điểm"] = pd.to_numeric(df["Điểm"], errors="coerce")
+    return df
 
 
 # ── Hàm xử lý core (dùng chung cho CLI và Streamlit) ────────────────────────
@@ -51,6 +60,7 @@ def run_core(sao_ke_source, tong_hop_source) -> dict:
         excel_bytes   – bytes của file Excel đã cập nhật
         workbook      – openpyxl Workbook (đã lưu vào excel_bytes)
         members_quy   – list thành viên từ sheet Quỹ
+        members_phat  – list thành viên từ sheet Phạt
         n_transactions – số giao dịch Có đọc được từ sao kê
     """
     df      = read_statement(sao_ke_source)
@@ -132,12 +142,106 @@ def run_core(sao_ke_source, tong_hop_source) -> dict:
     buf.seek(0)
 
     return {
-        "logs":          pd.DataFrame(logs),
+        "logs":          _logs_df(logs),
         "excel_bytes":   buf.getvalue(),
         "workbook":      wb,
         "members_quy":   members_quy,
+        "members_phat":  members_phat,
         "n_transactions": len(df),
     }
+
+
+# ── Xử lý thủ công các giao dịch app không tự nhận diện được ───────────────
+
+PERIOD_TX_MONTH = "Theo tháng giao dịch"
+PERIOD_OPTIONS = (
+    [PERIOD_TX_MONTH]
+    + [f"Quý {q}" for q in range(1, 5)]
+    + ["Cả năm"]
+    + [f"Tháng {m}" for m in range(1, 13)]
+)
+
+
+def months_from_period(period: str, tx_month: int) -> list:
+    """Đổi lựa chọn kỳ đóng quỹ (VD 'Quý 2', 'Tháng 5') thành danh sách tháng."""
+    if period == "Cả năm":
+        return list(range(1, 13))
+    if m := re.fullmatch(r"Quý (\d)", period or ""):
+        return months_of_quarter(int(m.group(1)))
+    if m := re.fullmatch(r"Tháng (\d+)", period or ""):
+        return [int(m.group(1))]
+    return [tx_month]
+
+
+def apply_manual_assignments(result: dict, assignments: list) -> tuple:
+    """
+    Áp dụng lựa chọn thủ công của người dùng cho các dòng log chưa xử lý được.
+
+    assignments: list dict {idx, kind ('quy'|'phat'|'ignore'), member, phat_col, period}
+        idx – vị trí dòng trong result['logs'].
+    Cập nhật workbook, log và excel_bytes trong `result` (sửa tại chỗ).
+    Trả về (số dòng đã áp dụng, list lỗi).
+    """
+    wb      = result["workbook"]
+    ws_quy  = wb[SHEET_QUY]
+    ws_phat = wb[SHEET_PHAT]
+    quy_by_name  = {m["name"]: m for m in result["members_quy"]}
+    phat_by_name = {m["name"]: m for m in result["members_phat"]}
+    logs   = result["logs"].to_dict("records")
+    for log in logs:  # NaN (ô điểm trống) → "" để ghi sheet log đúng như lần đầu
+        if pd.isna(log["Điểm"]):
+            log["Điểm"] = ""
+    errors = []
+    applied = 0
+
+    for a in assignments:
+        log = logs[a["idx"]]
+        where = f"{log['Ngày']} – {int(log['Số tiền']):,}đ"
+        if log["Tên khớp"] or log["Loại"] == "ignore":
+            continue
+
+        if a["kind"] == "ignore":
+            log["Loại"], log["Trạng thái"] = "ignore", "Bỏ qua thủ công"
+            applied += 1
+            continue
+
+        by_name = quy_by_name if a["kind"] == "quy" else phat_by_name
+        member  = by_name.get(a.get("member"))
+        if member is None:
+            errors.append(f"{where}: chưa chọn đảng viên.")
+            continue
+
+        if a["kind"] == "quy":
+            tx_month = datetime.strptime(log["Ngày"], "%d/%m/%Y").month
+            months   = months_from_period(a.get("period"), tx_month)
+            actions  = [f"T{mo}:{set_quy_month(ws_quy, member['row'], mo)}" for mo in months]
+            refresh_quy_formulas(ws_quy, member["row"])
+            log["Sheet"] = ws_quy.title
+            log["Ô/Cột cập nhật"] = ", ".join(
+                ws_quy.cell(member["row"], QUY_MONTH_COLS[mo]).coordinate for mo in months
+            )
+            log["Trạng thái"] = "Thủ công (quỹ); " + ", ".join(actions)
+        else:
+            col = a.get("phat_col")
+            if col is None:
+                errors.append(f"{where}: chưa chọn loại vi phạm.")
+                continue
+            action = update_phat_cell(ws_phat, member["row"], col, int(log["Số tiền"]))
+            refresh_phat_formula(ws_phat, member["row"])
+            log["Sheet"] = ws_phat.title
+            log["Ô/Cột cập nhật"] = ws_phat.cell(member["row"], col).coordinate
+            log["Trạng thái"] = f"Thủ công (phạt {phat_label(col)}); {action}"
+
+        log["Loại"], log["Tên khớp"] = a["kind"], member["name"]
+        applied += 1
+
+    if applied:
+        write_log_sheet(wb, logs)
+        buf = io.BytesIO()
+        wb.save(buf)
+        result["logs"] = _logs_df(logs)
+        result["excel_bytes"] = buf.getvalue()
+    return applied, errors
 
 
 # ── CLI entry point ───────────────────────────────────────────────────────────

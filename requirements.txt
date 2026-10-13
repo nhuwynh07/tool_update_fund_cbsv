@@ -1,4 +1,4 @@
 pandas
 openpyxl
 rapidfuzz
-streamlit
+streamlit>=1.54

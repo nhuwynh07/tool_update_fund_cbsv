@@ -3,10 +3,11 @@ excel_writer.py – Cập nhật dữ liệu vào sheet Excel và ghi sheet log 
 """
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
+import config
 from text_utils import norm_text, parse_money
 from config import (
     LOG_SHEET,
-    QUY_MONTH_COLS, QUY_STANDARD_MONTH_AMOUNT,
+    QUY_MONTH_COLS,
     PHAT_TOTAL_COL,
 )
 
@@ -29,9 +30,9 @@ def set_quy_month(ws, row: int, month: int) -> str:
     """
     cell = ws.cell(row, QUY_MONTH_COLS[month])
     old  = parse_money(cell.value)
-    if old == QUY_STANDARD_MONTH_AMOUNT:
+    if old == config.QUY_STANDARD_MONTH_AMOUNT:
         return "giữ nguyên"
-    cell.value = QUY_STANDARD_MONTH_AMOUNT
+    cell.value = config.QUY_STANDARD_MONTH_AMOUNT
     return "cập nhật" if old == 0 else f"ghi đè {old}"
 
 
