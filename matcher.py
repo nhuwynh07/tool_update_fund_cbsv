@@ -132,7 +132,7 @@ def phat_label(col: int) -> str:
 
 def classify_transaction(tx: dict) -> tuple:
     """
-    Phân loại giao dịch thành: 'ignore' | 'phat' | 'quy' | 'unknown'.
+    Phân loại giao dịch thành: 'ignore' | 'phat' | 'quy' | 'dangphi' | 'unknown'.
     Trả về (tx_type, target_col | None, ghi_chu).
 
     Lưu ý: giao dịch bằng mức quỹ 1 tháng nhưng không rõ tháng/quý → phạt
@@ -149,6 +149,10 @@ def classify_transaction(tx: dict) -> tuple:
     for rule in config.PHAT_RULES:
         if any(norm_text(k) in details_norm for k in rule["keywords"]):
             return "phat", rule["col"], rule["label"]
+
+    # Thu đảng phí: đúng số tiền quy định → chỉ phân loại, không ghi vào báo cáo
+    if config.DANG_PHI_AMOUNT > 0 and tx["amount"] == config.DANG_PHI_AMOUNT:
+        return "dangphi", None, "Thu đảng phí"
 
     # Từ khóa quỹ/đảng phí
     if any(norm_text(k) in details_norm for k in QUY_KEYWORDS):

@@ -4,7 +4,6 @@ app.py – Giao diện web Streamlit cho hệ thống đối soát thu chi bộ.
 Khởi chạy: streamlit run app.py
 """
 import io
-import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -12,7 +11,6 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 from openpyxl import load_workbook
-from openpyxl.utils import column_index_from_string
 
 # Thêm thư mục gốc vào sys.path để import các module backend
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -312,6 +310,7 @@ def color_log_type(val: str) -> str:
     mapping = {
         "quy":     "background-color:#e3f2fd; color:#1565c0",
         "phat":    "background-color:#ffebee; color:#c62828",
+        "dangphi": "background-color:#e8f5e9; color:#2e7d32",
         "ignore":  "background-color:#f3e5f5; color:#6a1b9a",
         "unknown": "background-color:#fff8e1; color:#e65100",
     }
@@ -370,6 +369,20 @@ def render_settings_tab() -> None:
         },
     )
 
+    # ── Đảng phí ────────────────────────────────────────────────────────────
+    st.markdown('<div class="section-title">Thu đảng phí</div>', unsafe_allow_html=True)
+    d1, d2 = st.columns([1, 2])
+    with d1:
+        dang_phi = st.number_input(
+            "Mức thu đảng phí (đ)", min_value=0, step=1_000,
+            value=int(settings["dang_phi_amount"]), key=f"dang_phi_{ver}",
+        )
+    with d2:
+        st.caption(
+            "Giao dịch đúng số tiền này được phân loại là thu đảng phí, chỉ hiển thị trên giao diện "
+            "và không cập nhật vào file báo cáo. Đặt 0 để tắt."
+        )
+
     # ── Phạt ────────────────────────────────────────────────────────────────
     st.markdown('<div class="section-title">Mức phạt</div>', unsafe_allow_html=True)
     st.caption(
@@ -411,6 +424,7 @@ def render_settings_tab() -> None:
     # ── Gom cài đặt mới từ giao diện ────────────────────────────────────────
     new_settings = {
         "quy_month_amount": int(month_amount),
+        "dang_phi_amount": int(dang_phi),
         "quy_extra_amount_hints": [
             {"amount": _to_int(r["Số tiền (đ)"]), "months": _to_int(r["Số tháng"])}
             for _, r in extra_edit.iterrows()
@@ -438,6 +452,10 @@ def render_settings_tab() -> None:
                    for a, m in quy_hints.items()]
         preview += [{"Số tiền": a, "Nhận diện là": f"Phạt: {new_labels[c]}"}
                     for a, c in phat_hints.items() if a not in quy_hints]
+        if dang_phi > 0:
+            # Thu đảng phí được xét trước quỹ/phạt theo số tiền
+            preview = [p for p in preview if p["Số tiền"] != dang_phi]
+            preview.append({"Số tiền": dang_phi, "Nhận diện là": "Thu đảng phí (không ghi báo cáo)"})
         st.dataframe(
             pd.DataFrame(preview).sort_values("Số tiền").style.format({"Số tiền": "{:,.0f}đ"}),
             hide_index=True, width="stretch",
@@ -559,7 +577,7 @@ files_ok = (
 # ─────────────────────────────────────────────────────────────────────────────
 # Tab "Cần xử lý": gán thủ công các giao dịch app chưa nhận diện/khớp tên được
 # ─────────────────────────────────────────────────────────────────────────────
-KIND_LABEL = {"Quỹ": "quy", "Phạt": "phat", "Bỏ qua": "ignore"}
+KIND_LABEL = {"Quỹ": "quy", "Phạt": "phat", "Đảng phí": "dangphi", "Bỏ qua": "ignore"}
 
 
 def _period_label(months: list) -> str:
@@ -652,51 +670,6 @@ def render_manual_tab(result: dict, todo: pd.DataFrame) -> None:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Tab thống kê
-# ─────────────────────────────────────────────────────────────────────────────
-def render_stats_tab(logs_df: pd.DataFrame) -> None:
-    done = logs_df[(logs_df["Tên khớp"] != "") & logs_df["Loại"].isin(["quy", "phat"])].copy()
-    if done.empty:
-        st.info("Chưa có giao dịch nào được ghi vào báo cáo.")
-        return
-    done["Số tiền"] = done["Số tiền"].astype(int)
-
-    c1, c2 = st.columns(2)
-    with c1:
-        st.markdown('<div class="section-title">Thu theo ngày</div>', unsafe_allow_html=True)
-        by_day = done.assign(Ngày=pd.to_datetime(done["Ngày"], format="%d/%m/%Y"))
-        by_day = by_day.groupby(["Ngày", "Loại"])["Số tiền"].sum().unstack(fill_value=0)
-        st.bar_chart(by_day, color=["#3949ab", "#c62828"][: len(by_day.columns)], height=280)
-    with c2:
-        st.markdown('<div class="section-title">Tiền phạt theo loại vi phạm</div>', unsafe_allow_html=True)
-        phat = done[done["Loại"] == "phat"].copy()
-        if phat.empty:
-            st.caption("Chưa có khoản phạt nào.")
-        else:
-            col_label = {r["col"]: r["label"] for r in config.PHAT_RULES}
-            phat["Lỗi"] = phat["Ô/Cột cập nhật"].map(
-                lambda c: col_label.get(column_index_from_string(re.match(r"[A-Z]+", c).group()), c)
-                if c else "Khác"
-            )
-            st.bar_chart(phat.groupby("Lỗi")["Số tiền"].sum(), color="#c62828", height=280, horizontal=True)
-
-    st.markdown('<div class="section-title">Tổng hợp theo đảng viên</div>', unsafe_allow_html=True)
-    per_member = (
-        done.pivot_table(index="Tên khớp", columns="Loại", values="Số tiền",
-                         aggfunc="sum", fill_value=0)
-        .rename(columns={"quy": "Quỹ (đ)", "phat": "Phạt (đ)"})
-    )
-    per_member["Số giao dịch"] = done.groupby("Tên khớp").size()
-    per_member["Tổng (đ)"] = per_member.drop(columns="Số giao dịch").sum(axis=1)
-    per_member = per_member.sort_values("Tổng (đ)", ascending=False).reset_index()
-    per_member = per_member.rename(columns={"Tên khớp": "Đảng viên"})
-    st.dataframe(
-        per_member.style.format({c: "{:,.0f}" for c in per_member.columns if c.endswith("(đ)")}),
-        hide_index=True, width="stretch", height=380,
-    )
-
-
-# ─────────────────────────────────────────────────────────────────────────────
 # Main area
 # ─────────────────────────────────────────────────────────────────────────────
 tab_doisoat, tab_settings = st.tabs(["Đối soát", "Quản lý mức thu"])
@@ -758,10 +731,11 @@ with tab_doisoat:
             logs_df["Loại"].isin(["quy", "phat", "unknown"]) & (logs_df["Tên khớp"] == "") & ~is_old
         )
         todo      = logs_df[needs_action]
-        n_matched = int((logs_df["Tên khớp"] != "").sum())
-        matched   = logs_df[logs_df["Tên khớp"] != ""]
-        total_quy  = matched.loc[matched["Loại"] == "quy", "Số tiền"].sum()
-        total_phat = matched.loc[matched["Loại"] == "phat", "Số tiền"].sum()
+        written   = logs_df[(logs_df["Tên khớp"] != "") & logs_df["Loại"].isin(["quy", "phat"])]
+        n_matched = len(written)
+        total_quy  = written.loc[written["Loại"] == "quy", "Số tiền"].sum()
+        total_phat = written.loc[written["Loại"] == "phat", "Số tiền"].sum()
+        total_dp   = logs_df.loc[logs_df["Loại"] == "dangphi", "Số tiền"].sum()
 
         st.markdown(f"""
         <div class="metric-row">
@@ -782,16 +756,15 @@ with tab_doisoat:
             </div>
             <div class="metric-card orange">
                 <div class="label">Tổng thu</div>
-                <div class="value">{total_quy + total_phat:,.0f}đ</div>
-                <div class="sub">Quỹ {total_quy:,.0f}đ · Phạt {total_phat:,.0f}đ</div>
+                <div class="value">{total_quy + total_phat + total_dp:,.0f}đ</div>
+                <div class="sub">Quỹ {total_quy:,.0f}đ · Phạt {total_phat:,.0f}đ · Đảng phí {total_dp:,.0f}đ</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
-        tab_log, tab_todo, tab_stats, tab_dl = st.tabs([
+        tab_log, tab_todo, tab_dl = st.tabs([
             "Log giao dịch",
             f"Cần xử lý ({len(todo)})",
-            "Thống kê",
             "Tải xuống",
         ])
 
@@ -802,7 +775,7 @@ with tab_doisoat:
             with c1:
                 search = st.text_input("Tìm theo tên hoặc nội dung", placeholder="Nhập từ khoá...")
             with c2:
-                filter_type = st.selectbox("Lọc loại", ["Tất cả", "quy", "phat", "ignore", "unknown"])
+                filter_type = st.selectbox("Lọc loại", ["Tất cả", "quy", "phat", "dangphi", "ignore", "unknown"])
             with c3:
                 filter_matched = st.selectbox("Khớp tên", ["Tất cả", "Đã khớp", "Chưa khớp"])
             only_todo = st.checkbox("Chỉ hiện các dòng cần xử lý")
@@ -839,9 +812,6 @@ with tab_doisoat:
 
         with tab_todo:
             render_manual_tab(result, todo)
-
-        with tab_stats:
-            render_stats_tab(logs_df)
 
         # ── Tải xuống ───────────────────────────────────────────────────────
         with tab_dl:

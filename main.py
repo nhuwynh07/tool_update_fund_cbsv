@@ -101,6 +101,15 @@ def run_core(sao_ke_source, tong_hop_source) -> dict:
             logs.append(log)
             continue
 
+        if tx_type == "dangphi":
+            # Chỉ hiển thị phân loại (kèm tên nếu khớp được), không ghi vào báo cáo
+            member, score, _ = match_member(tx, members_quy)
+            if member is not None:
+                log["Tên khớp"], log["Điểm"] = member["name"], round(score, 1)
+            log["Trạng thái"] = "Thu đảng phí (chỉ hiển thị, không ghi vào báo cáo)"
+            logs.append(log)
+            continue
+
         members   = members_quy  if tx_type == "quy" else members_phat
         target_ws = ws_quy       if tx_type == "quy" else ws_phat
         member, score, match_note = match_member(tx, members)
@@ -177,7 +186,7 @@ def apply_manual_assignments(result: dict, assignments: list) -> tuple:
     """
     Áp dụng lựa chọn thủ công của người dùng cho các dòng log chưa xử lý được.
 
-    assignments: list dict {idx, kind ('quy'|'phat'|'ignore'), member, phat_col, period}
+    assignments: list dict {idx, kind ('quy'|'phat'|'dangphi'|'ignore'), member, phat_col, period}
         idx – vị trí dòng trong result['logs'].
     Cập nhật workbook, log và excel_bytes trong `result` (sửa tại chỗ).
     Trả về (số dòng đã áp dụng, list lỗi).
@@ -202,6 +211,13 @@ def apply_manual_assignments(result: dict, assignments: list) -> tuple:
 
         if a["kind"] == "ignore":
             log["Loại"], log["Trạng thái"] = "ignore", "Bỏ qua thủ công"
+            applied += 1
+            continue
+
+        if a["kind"] == "dangphi":
+            log["Loại"], log["Trạng thái"] = "dangphi", "Thu đảng phí (thủ công, không ghi vào báo cáo)"
+            if a.get("member") in quy_by_name:
+                log["Tên khớp"] = a["member"]
             applied += 1
             continue
 

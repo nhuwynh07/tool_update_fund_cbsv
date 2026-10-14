@@ -37,6 +37,8 @@ QUY_MONTH_COLS = {
 QUY_QUARTER_TOTAL_COLS  = {1: 8, 2: 12, 3: 16, 4: 20}
 QUY_TOTAL_COL            = 21
 QUY_STANDARD_MONTH_AMOUNT = 20_000
+# Thu đảng phí: GD đúng số tiền này được phân loại 'dangphi' (chỉ hiển thị, không ghi báo cáo). 0 = tắt
+DANG_PHI_AMOUNT = 5_000
 DEFAULT_COLLECTION_QUARTER = 1   # Quý đang thu (1 = Q1)
 
 # ── Quy tắc phạt ────────────────────────────────────────────────────────────
@@ -92,6 +94,7 @@ account remitter debit credit so but toan dien giai no mon khong bb hop so hop
 # ── Cài đặt mức thu chỉnh trên giao diện (settings.json) ────────────────────
 _DEFAULT_SETTINGS = {
     "quy_month_amount":         QUY_STANDARD_MONTH_AMOUNT,
+    "dang_phi_amount":          DANG_PHI_AMOUNT,
     "quy_extra_amount_hints":   [{"amount": a, "months": m} for a, m in QUY_EXTRA_AMOUNT_HINTS.items()],
     "phat_rules":               copy.deepcopy(PHAT_RULES),
     "quy_unspecified_phat_col": QUY_UNSPECIFIED_PHAT_COL,
@@ -145,9 +148,10 @@ def build_phat_amount_hints(rules: list) -> dict:
 
 def apply_settings(settings: dict) -> None:
     """Cập nhật các hằng số module theo cài đặt (các module đọc qua config.X)."""
-    global QUY_STANDARD_MONTH_AMOUNT, QUY_AMOUNT_HINTS
+    global QUY_STANDARD_MONTH_AMOUNT, QUY_AMOUNT_HINTS, DANG_PHI_AMOUNT
     global PHAT_RULES, PHAT_AMOUNT_HINTS, QUY_UNSPECIFIED_PHAT_COL
     QUY_STANDARD_MONTH_AMOUNT = int(settings["quy_month_amount"])
+    DANG_PHI_AMOUNT = int(settings["dang_phi_amount"])
     QUY_AMOUNT_HINTS = build_quy_amount_hints(
         QUY_STANDARD_MONTH_AMOUNT, settings["quy_extra_amount_hints"]
     )
